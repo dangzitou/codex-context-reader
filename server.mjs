@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
 import { readFile, readdir, realpath, stat } from "node:fs/promises";
-import { basename, relative, resolve, sep } from "node:path";
+import { basename, isAbsolute, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 import { promisify } from "node:util";
 
@@ -20,7 +20,7 @@ async function projectRoot() {
 }
 
 async function selectProject(requestedPath) {
-  if (typeof requestedPath !== "string" || !requestedPath.startsWith("/")) throw new Error("path must be an absolute local directory path.");
+  if (typeof requestedPath !== "string" || !isAbsolute(requestedPath)) throw new Error("path must be an absolute local directory path.");
   const root = await realpath(requestedPath);
   if (!(await stat(root)).isDirectory()) throw new Error("Selected path is not a directory.");
   activeProjectRoot = root;
@@ -37,7 +37,7 @@ function hasBlockedPart(path) {
 }
 
 async function safePath(root, requestedPath) {
-  if (typeof requestedPath !== "string" || !requestedPath || requestedPath.startsWith("/") || hasBlockedPart(requestedPath)) throw new Error("Path is outside the readable project scope.");
+  if (typeof requestedPath !== "string" || !requestedPath || isAbsolute(requestedPath) || hasBlockedPart(requestedPath)) throw new Error("Path is outside the readable project scope.");
   const candidate = resolve(root, requestedPath);
   if (!isInside(root, candidate)) throw new Error("Path is outside the configured project.");
   const actual = await realpath(candidate);
