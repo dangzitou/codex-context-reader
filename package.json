@@ -1,6 +1,6 @@
 {
   "name": "codex-context-reader",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "A read-only MCP plugin for selected local projects in Codex and ChatGPT Developer mode.",
   "type": "module",
   "scripts": {

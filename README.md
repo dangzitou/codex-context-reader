@@ -4,7 +4,7 @@ A read-only [Model Context Protocol](https://modelcontextprotocol.io/) server th
 
 It returns only a project overview, search matches, and bounded file excerpts. This reduces unrelated context and token use. Actual usage depends on the model and request.
 
-> **ChatGPT web requirement.** This server can be used in a regular ChatGPT chat only through ChatGPT **Developer mode**. The current OpenAI documentation says Pro users may connect read/fetch MCPs in Developer mode; full MCP actions are for Business, Enterprise, and Edu. This project is read-only. Developer-mode UI and availability can change during the beta. [Official availability](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt)
+> **ChatGPT web requirement.** This server can be used in a regular ChatGPT chat only when that account visibly offers ChatGPT **Developer mode**. OpenAI documents read/fetch MCP support for Pro in Developer mode, but the beta control is not a self-service entitlement for every account. Full MCP actions are for Business, Enterprise, and Edu. This project is read-only. [Official availability](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt)
 
 [中文](#中文) · [Install](#install-and-chatgpt-web-setup) · [Security](#security) · [Contributing](CONTRIBUTING.md)
 
@@ -37,7 +37,7 @@ Do not expose the local project to the public internet. Do not modify any select
 | Create a runtime API key and enter it in a local terminal | It is a credential; the launcher hides the input and does not save it. |
 | In ChatGPT Plugins, create the Tunnel connection | This changes your ChatGPT account settings. |
 
-If **Developer mode** is not visible on ChatGPT web, do not keep retrying the Tunnel: the account cannot currently attach this custom MCP in ChatGPT. You can still use the direct local Codex route below. OpenAI’s product UI is in beta and may change.
+If **Developer mode** is not visible on ChatGPT web, do not keep retrying the Tunnel: there is no local setting or Tunnel command that can make it appear, and the account cannot currently attach this custom MCP in ChatGPT. You can still use the direct local Codex route below. OpenAI’s product UI is in beta and may change.
 
 ### Start the private Tunnel
 
@@ -145,7 +145,7 @@ Codex Context Reader 是一个只读 [MCP](https://modelcontextprotocol.io/) 服
 
 它只返回项目概览、搜索结果和有限文件片段，减少无关上下文和 token 消耗。实际消耗取决于模型和提问。
 
-> **ChatGPT 网页版要求。** 普通 ChatGPT 对话要使用本服务，必须通过 ChatGPT **Developer mode**。OpenAI 当前文档说明，Pro 可在 Developer mode 中连接 read/fetch MCP；完整 MCP 操作仅面向 Business、Enterprise 和 Edu。本项目只读。该 beta 功能的 UI 和可用范围可能变化。[官方可用性说明](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt)
+> **ChatGPT 网页版要求。** 普通 ChatGPT 对话只有在账号实际展示 ChatGPT **Developer mode** 时才能使用本服务。OpenAI 文档说明 Pro 可在 Developer mode 中连接 read/fetch MCP，但该 beta 控制并非每个账号都有可自行开启的入口；完整 MCP 操作仅面向 Business、Enterprise 和 Edu。本项目只读。[官方可用性说明](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt)
 
 [安装](#安装与-chatgpt-网页端配置) · [安全](#安全与数据边界) · [贡献](CONTRIBUTING.md)
 
@@ -178,7 +178,7 @@ Codex Context Reader 是一个只读 [MCP](https://modelcontextprotocol.io/) 服
 | 创建 runtime API key，并在本机终端输入 | 它是凭据；启动器隐藏输入且不会保存。 |
 | 在 ChatGPT Plugins 中创建 Tunnel 连接 | 这会修改你的 ChatGPT 账户设置。 |
 
-若在 ChatGPT 网页版也看不到 **Developer mode**，不要继续反复尝试 Tunnel：该账号当前不能在 ChatGPT 中挂载这个自定义 MCP。此时仍可用下面的本地 Codex 方式。OpenAI 的产品 UI 仍在 beta，后续可能变化。
+若在 ChatGPT 网页版也看不到 **Developer mode**，不要继续反复尝试 Tunnel：本机设置或 Tunnel 命令都无法让它出现，该账号当前不能在 ChatGPT 中挂载这个自定义 MCP。此时仍可用下面的本地 Codex 方式。OpenAI 的产品 UI 仍在 beta，后续可能变化。
 
 ### 启动私有 Tunnel
 
