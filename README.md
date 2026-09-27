@@ -61,22 +61,22 @@ A normal ChatGPT Chat runs remotely, so it cannot start this local stdio server 
 macOS/Linux:
 
 ```sh
-export CONTROL_PLANE_API_KEY="your-runtime-key"
 export TUNNEL_CLIENT_BIN="/absolute/path/to/tunnel-client"
 npm run chat:tunnel -- --configure --tunnel-id "your-tunnel-id"
+export CONTROL_PLANE_API_KEY="your-runtime-key"
 npm run chat:tunnel
 ```
 
 Windows PowerShell:
 
 ```powershell
-$env:CONTROL_PLANE_API_KEY = "your-runtime-key"
 $env:TUNNEL_CLIENT_BIN = "C:\absolute\path\to\tunnel-client.exe"
 npm run chat:tunnel -- --configure --tunnel-id "your-tunnel-id"
+$env:CONTROL_PLANE_API_KEY = "your-runtime-key"
 npm run chat:tunnel
 ```
 
-`chat:tunnel` writes a `project-context-reader` profile once, runs `doctor --explain`, then keeps the tunnel in the foreground. Later runs need only `npm run chat:tunnel`. A healthy client reports `ready`; if it stops, Chat cannot call the tools.
+`chat:tunnel -- --configure` writes the `project-context-reader` profile once. `chat:tunnel` then runs `doctor --explain` and keeps the tunnel in the foreground. Later runs need only `npm run chat:tunnel`. A healthy client reports `ready`; if it stops, Chat cannot call the tools.
 
 ### Add it to ChatGPT Chat
 
@@ -239,22 +239,22 @@ Codex Context Reader 是一个面向 **ChatGPT 桌面端本地项目**和 Codex 
 macOS/Linux：
 
 ```sh
-export CONTROL_PLANE_API_KEY="你的 runtime key"
 export TUNNEL_CLIENT_BIN="/tunnel-client 的绝对路径"
 npm run chat:tunnel -- --configure --tunnel-id "你的 tunnel_id"
+export CONTROL_PLANE_API_KEY="你的 runtime key"
 npm run chat:tunnel
 ```
 
 Windows PowerShell：
 
 ```powershell
-$env:CONTROL_PLANE_API_KEY = "你的 runtime key"
 $env:TUNNEL_CLIENT_BIN = "C:\tunnel-client.exe 的绝对路径"
 npm run chat:tunnel -- --configure --tunnel-id "你的 tunnel_id"
+$env:CONTROL_PLANE_API_KEY = "你的 runtime key"
 npm run chat:tunnel
 ```
 
-`chat:tunnel` 首次写入 `project-context-reader` profile，执行 `doctor --explain`，随后以前台方式保持 Tunnel 运行。以后只需 `npm run chat:tunnel`。状态为 `ready` 时，Chat 才能调用工具。
+`chat:tunnel -- --configure` 首次写入 `project-context-reader` profile。`chat:tunnel` 随后执行 `doctor --explain`，并以前台方式保持 Tunnel 运行。以后只需 `npm run chat:tunnel`。状态为 `ready` 时，Chat 才能调用工具。
 
 ### 在 Chat 中添加连接
 

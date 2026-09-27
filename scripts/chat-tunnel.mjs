@@ -58,10 +58,14 @@ if (dryRun) {
   console.log(JSON.stringify({ client, initArgs, doctorArgs: ["doctor", "--profile", profile, "--explain"], runArgs: ["run", "--profile", profile] }, null, 2));
   process.exit(0);
 }
+if (initArgs) {
+  invoke(client, initArgs);
+  console.log(`Configured tunnel-client profile: ${profile}`);
+  process.exit(0);
+}
 if (!process.env.CONTROL_PLANE_API_KEY) {
   console.error("Set CONTROL_PLANE_API_KEY to a runtime key with Tunnels Read + Use before starting the tunnel.");
   process.exit(1);
 }
-if (initArgs) invoke(client, initArgs);
 invoke(client, ["doctor", "--profile", profile, "--explain"]);
 invoke(client, ["run", "--profile", profile]);
