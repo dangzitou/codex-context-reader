@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import { basename, isAbsolute, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
@@ -8,23 +9,26 @@ import { promisify } from "node:util";
 const execFileAsync = promisify(execFile);
 const EXCLUDED_PARTS = new Set([".git", "node_modules", "dist", "build", "coverage", ".next"]);
 const SECRET_NAME = /^(?:\.env(?:\..*)?|.*\.(?:pem|key|p12|pfx))$/i;
-let activeProjectRoot;
+const selectedProjects = new Map();
+const PROJECT_SELECTION_TTL_MS = 30 * 60 * 1000;
 
 function toolText(content, isError = false) {
   return { content: [{ type: "text", text: content }], ...(isError && { isError: true }) };
 }
 
-async function projectRoot() {
-  if (!activeProjectRoot) throw new Error("No project is selected. Call select_project with the local project path.");
-  return activeProjectRoot;
+async function projectRoot(projectId) {
+  if (typeof projectId !== "string" || !selectedProjects.has(projectId)) throw new Error("Unknown or expired projectId. Call select_project again.");
+  return selectedProjects.get(projectId);
 }
 
 async function selectProject(requestedPath) {
   if (typeof requestedPath !== "string" || !isAbsolute(requestedPath)) throw new Error("path must be an absolute local directory path.");
   const root = await realpath(requestedPath);
   if (!(await stat(root)).isDirectory()) throw new Error("Selected path is not a directory.");
-  activeProjectRoot = root;
-  return `Selected project: ${basename(root)}\nPath: ${root}\nSelection is only kept for this MCP session.`;
+  const projectId = randomUUID();
+  selectedProjects.set(projectId, root);
+  setTimeout(() => selectedProjects.delete(projectId), PROJECT_SELECTION_TTL_MS).unref();
+  return `Selected project: ${basename(root)}\nPath: ${root}\nProject ID: ${projectId}\nUse this projectId for subsequent reads. It expires after 30 minutes or when the MCP server stops.`;
 }
 
 function isInside(root, candidate) {
@@ -68,36 +72,36 @@ const tools = [
   {
     name: "select_project",
     title: "Select local project",
-    description: "Select one absolute local directory for this MCP session. Use only after the user explicitly names or approves that directory. This changes in-memory session state and never writes a configuration file.",
+    description: "Select one absolute local directory after the user explicitly names or approves it. Returns an opaque projectId required for later reads. This changes in-memory state and never writes a configuration file.",
     inputSchema: { type: "object", properties: { path: { type: "string", minLength: 2, maxLength: 2000, description: "Absolute path of the local project directory" } }, required: ["path"], additionalProperties: false },
     annotations: { readOnlyHint: false, openWorldHint: false },
   },
   {
     name: "project_overview",
     title: "Project overview",
-    description: "Show the selected project's root-level structure, Git branch, concise status, and three recent commit subjects. Call this before reading code.",
-    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    description: "Show a selected project's root-level structure, Git branch, concise status, and three recent commit subjects. Call this before reading code.",
+    inputSchema: { type: "object", properties: { projectId: { type: "string", description: "Opaque ID returned by select_project" } }, required: ["projectId"], additionalProperties: false },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
   {
     name: "search_code",
     title: "Search project code",
     description: "Find literal text in the configured project. Excludes Git metadata, dependencies, build output, and likely secret files.",
-    inputSchema: { type: "object", properties: { query: { type: "string", minLength: 1, maxLength: 300, description: "Literal text to find" }, path: { type: "string", maxLength: 500, default: ".", description: "Optional project-relative directory or file" }, maxResults: { type: "integer", minimum: 1, maximum: 100, default: 40 } }, required: ["query"], additionalProperties: false },
+    inputSchema: { type: "object", properties: { projectId: { type: "string", description: "Opaque ID returned by select_project" }, query: { type: "string", minLength: 1, maxLength: 300, description: "Literal text to find" }, path: { type: "string", maxLength: 500, default: ".", description: "Optional project-relative directory or file" }, maxResults: { type: "integer", minimum: 1, maximum: 100, default: 40 } }, required: ["projectId", "query"], additionalProperties: false },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
   {
     name: "read_file",
     title: "Read file excerpt",
     description: "Read a bounded line range from a project-relative text file. Refuses Git metadata and likely secret files.",
-    inputSchema: { type: "object", properties: { path: { type: "string", minLength: 1, maxLength: 500, description: "Project-relative file path" }, startLine: { type: "integer", minimum: 1, default: 1 }, endLine: { type: "integer", minimum: 1, default: 400 } }, required: ["path"], additionalProperties: false },
+    inputSchema: { type: "object", properties: { projectId: { type: "string", description: "Opaque ID returned by select_project" }, path: { type: "string", minLength: 1, maxLength: 500, description: "Project-relative file path" }, startLine: { type: "integer", minimum: 1, default: 1 }, endLine: { type: "integer", minimum: 1, default: 400 } }, required: ["projectId", "path"], additionalProperties: false },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
   {
     name: "git_context",
     title: "Git context",
-    description: "Read the current Git status, diff summary, and five recent commits for the configured project.",
-    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    description: "Read the current Git status, diff summary, and five recent commits for a selected project.",
+    inputSchema: { type: "object", properties: { projectId: { type: "string", description: "Opaque ID returned by select_project" } }, required: ["projectId"], additionalProperties: false },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
 ];
@@ -105,7 +109,7 @@ const tools = [
 async function callTool(name, args = {}) {
   try {
     if (name === "select_project") return toolText(await selectProject(args.path));
-    const root = await projectRoot();
+    const root = await projectRoot(args.projectId);
     if (name === "project_overview") return toolText(await overview(root));
     if (name === "git_context") {
       const [status, diff, commits] = await Promise.all([git(root, ["status", "--short"]), git(root, ["diff", "--stat"]), git(root, ["log", "-5", "--format=%h %ad %s", "--date=short"])]);
@@ -151,7 +155,7 @@ async function handle(request) {
   if (!request || request.jsonrpc !== "2.0" || typeof request.method !== "string") return;
   const reply = (result) => request.id !== undefined && send({ jsonrpc: "2.0", id: request.id, result });
   if (request.method === "initialize") {
-    reply({ protocolVersion: request.params?.protocolVersion || "2025-11-25", capabilities: { tools: { listChanged: false } }, serverInfo: { name: "project-context-reader", version: "0.1.0" }, instructions: "Read-only local project access for planning. First call select_project only when the user explicitly supplies or approves an absolute local path, then call project_overview. Use search_code and read_file for evidence. Do not request secret files or modify the project." });
+    reply({ protocolVersion: request.params?.protocolVersion || "2025-11-25", capabilities: { tools: { listChanged: false } }, serverInfo: { name: "project-context-reader", version: "0.1.0" }, instructions: "Read-only local project access for planning. First call select_project only when the user explicitly supplies or approves an absolute local path. Reuse its projectId in every later project_overview, search_code, read_file, and git_context call. Do not request secret files or modify the project." });
   } else if (request.method === "ping") reply({});
   else if (request.method === "tools/list") reply({ tools });
   else if (request.method === "tools/call") reply(await callTool(request.params?.name, request.params?.arguments));

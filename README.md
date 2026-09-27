@@ -62,29 +62,21 @@ macOS/Linux:
 
 ```sh
 export CONTROL_PLANE_API_KEY="your-runtime-key"
-tunnel-client init \
-  --sample sample_mcp_stdio_local \
-  --profile project-context-reader \
-  --tunnel-id "your-tunnel-id" \
-  --mcp-command "node $HOME/plugins/project-context-reader/server.mjs"
-tunnel-client doctor --profile project-context-reader --explain
-tunnel-client run --profile project-context-reader
+export TUNNEL_CLIENT_BIN="/absolute/path/to/tunnel-client"
+npm run chat:tunnel -- --configure --tunnel-id "your-tunnel-id"
+npm run chat:tunnel
 ```
 
 Windows PowerShell:
 
 ```powershell
 $env:CONTROL_PLANE_API_KEY = "your-runtime-key"
-tunnel-client.exe init `
-  --sample sample_mcp_stdio_local `
-  --profile project-context-reader `
-  --tunnel-id "your-tunnel-id" `
-  --mcp-command "node $env:USERPROFILE\plugins\project-context-reader\server.mjs"
-tunnel-client.exe doctor --profile project-context-reader --explain
-tunnel-client.exe run --profile project-context-reader
+$env:TUNNEL_CLIENT_BIN = "C:\absolute\path\to\tunnel-client.exe"
+npm run chat:tunnel -- --configure --tunnel-id "your-tunnel-id"
+npm run chat:tunnel
 ```
 
-Keep `tunnel-client run` running while using Chat. A healthy client reports `ready`; if it stops, Chat cannot call the tools.
+`chat:tunnel` writes a `project-context-reader` profile once, runs `doctor --explain`, then keeps the tunnel in the foreground. Later runs need only `npm run chat:tunnel`. A healthy client reports `ready`; if it stops, Chat cannot call the tools.
 
 ### Add it to ChatGPT Chat
 
@@ -174,15 +166,15 @@ ChatGPT asks you to approve `select_project`. That selection is kept only in the
 | Tool | Purpose |
 | --- | --- |
 | `select_project` | Select one absolute local directory for this session. Requires approval. |
-| `project_overview` | Read root-level structure, branch, working-tree status, and recent commits. |
-| `search_code` | Search literal text while excluding dependencies, output, and likely secret files. |
-| `read_file` | Return up to 400 lines from a project-relative text file. |
-| `git_context` | Read Git status, diff summary, and five recent commits. |
+| `project_overview` | Read structure, branch, working-tree status, and recent commits for a selected project ID. |
+| `search_code` | Search literal text in the selected project ID while excluding dependencies, output, and likely secret files. |
+| `read_file` | Return up to 400 lines from a file in the selected project ID. |
+| `git_context` | Read Git status, diff summary, and five recent commits for a selected project ID. |
 
 ## Security
 
 - The project is selected explicitly through an approval-gated tool.
-- Selection is in memory only and disappears when the MCP session ends.
+- Selection IDs are random, held only in memory, and expire after 30 minutes or when the MCP server stops.
 - File reads stay inside the selected directory after resolving symlinks.
 - The server blocks `.git`, `node_modules`, common output directories, `.env*`, and common key-file extensions.
 - This is a local MCP server. The code excerpts it returns are still sent to the ChatGPT conversation. Use it only with repositories that your organization permits you to share with ChatGPT.
@@ -248,29 +240,21 @@ macOS/Linux：
 
 ```sh
 export CONTROL_PLANE_API_KEY="你的 runtime key"
-tunnel-client init \
-  --sample sample_mcp_stdio_local \
-  --profile project-context-reader \
-  --tunnel-id "你的 tunnel_id" \
-  --mcp-command "node $HOME/plugins/project-context-reader/server.mjs"
-tunnel-client doctor --profile project-context-reader --explain
-tunnel-client run --profile project-context-reader
+export TUNNEL_CLIENT_BIN="/tunnel-client 的绝对路径"
+npm run chat:tunnel -- --configure --tunnel-id "你的 tunnel_id"
+npm run chat:tunnel
 ```
 
 Windows PowerShell：
 
 ```powershell
 $env:CONTROL_PLANE_API_KEY = "你的 runtime key"
-tunnel-client.exe init `
-  --sample sample_mcp_stdio_local `
-  --profile project-context-reader `
-  --tunnel-id "你的 tunnel_id" `
-  --mcp-command "node $env:USERPROFILE\plugins\project-context-reader\server.mjs"
-tunnel-client.exe doctor --profile project-context-reader --explain
-tunnel-client.exe run --profile project-context-reader
+$env:TUNNEL_CLIENT_BIN = "C:\tunnel-client.exe 的绝对路径"
+npm run chat:tunnel -- --configure --tunnel-id "你的 tunnel_id"
+npm run chat:tunnel
 ```
 
-使用 Chat 期间保持 `tunnel-client run` 运行。状态为 `ready` 时，Chat 才能调用工具。
+`chat:tunnel` 首次写入 `project-context-reader` profile，执行 `doctor --explain`，随后以前台方式保持 Tunnel 运行。以后只需 `npm run chat:tunnel`。状态为 `ready` 时，Chat 才能调用工具。
 
 ### 在 Chat 中添加连接
 
@@ -311,7 +295,7 @@ ChatGPT 应在调用 `select_project` 前请求确认。该操作只在当前 MC
 
 ## 安全与数据边界
 
-- `select_project` 需要人工确认，且仅在当前 MCP 会话中有效。
+- `select_project` 返回随机项目 ID，仅保存在内存中；30 分钟后或 MCP 服务停止时失效。
 - 读取范围被限制在已选择项目内，符号链接也会校验真实路径。
 - 插件返回到 ChatGPT 的代码片段会成为对话上下文；请仅对公司允许提供给 ChatGPT 的代码库使用。
 

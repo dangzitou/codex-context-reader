@@ -1,11 +1,12 @@
 {
   "name": "codex-context-reader",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A read-only MCP plugin that lets local ChatGPT projects and Codex inspect projects on demand.",
   "type": "module",
   "scripts": {
     "install:plugin": "node scripts/install-plugin.mjs",
-    "test": "node test-server.mjs"
+    "test": "node test-server.mjs && node test-tunnel-script.mjs",
+    "chat:tunnel": "node scripts/chat-tunnel.mjs"
   },
   "keywords": [
     "chatgpt",
