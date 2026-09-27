@@ -1,6 +1,6 @@
 # Codex Context Reader
 
-A read-only [Model Context Protocol](https://modelcontextprotocol.io/) plugin for **local Codex tasks** in the ChatGPT desktop app, Codex CLI, and the Codex IDE extension. It lets Codex inspect a local project only when you select it, retrieving code on demand instead of pasting an entire repository into a conversation.
+A read-only [Model Context Protocol](https://modelcontextprotocol.io/) plugin for **local projects in the ChatGPT desktop app** and Codex. It lets ChatGPT or Codex inspect a local project only when you select it, retrieving code on demand instead of pasting an entire repository into a conversation.
 
 This is intended to reduce unnecessary prompt context and token use. Actual token consumption depends on the model and the questions asked.
 
@@ -10,11 +10,12 @@ This is intended to reduce unnecessary prompt context and token use. Actual toke
 
 | Surface | Local project tools |
 | --- | --- |
-| ChatGPT desktop app, **Codex → Local** task | Supported |
-| Codex CLI or Codex IDE extension | Supported |
-| Regular ChatGPT Chat (`kind: chatgpt`) or ChatGPT on the web | Not supported by this local stdio plugin |
+| ChatGPT desktop app, **local project** chat or ChatGPT Work | Supported; start a new chat after installation |
+| ChatGPT desktop app, **Codex → Local** task or Codex CLI | Supported |
+| Existing Quick Chat without a local project | The plugin may appear without its local tool catalog; create a local project chat |
+| ChatGPT on the web or mobile | Not supported by this local stdio server |
 
-A regular ChatGPT Chat can show an `@Project Context Reader` mention without receiving the local tool catalog. Open a **Codex → Local** task, then use the plugin there. The plugin process runs on your computer and cannot be attached to hosted Chat sessions.
+Choose **Work in a project**, attach the local folder, and start a new chat from that project. Then type `/mcp` to confirm that `project-context-reader` is connected before sending your request. The plugin process runs on your computer, so a hosted web or mobile chat cannot start it.
 
 ## What it does
 
@@ -41,7 +42,7 @@ flowchart LR
 
 ## Requirements
 
-- ChatGPT desktop app with a **Codex → Local** task, Codex CLI, or the Codex IDE extension.
+- ChatGPT desktop app with a local project chat or ChatGPT Work, or Codex CLI.
 - [Codex CLI](https://developers.openai.com/codex/cli/) on `PATH` for the one-command installer.
 - Node.js 18 or later.
 - [`ripgrep`](https://github.com/BurntSushi/ripgrep) (`rg`) for code search.
@@ -56,10 +57,10 @@ The plugin must be cloned under your home directory because ChatGPT's personal m
 You can paste this prompt directly into a local Codex chat. It chooses the correct macOS or Windows path itself:
 
 ```text
-Install https://github.com/dangzitou/codex-context-reader as a personal ChatGPT desktop plugin on this computer. Clone it into the required home-directory plugins path for this operating system, but inspect an existing target first and do not overwrite unrelated files. Run its documented npm installer, verify that `codex plugin list` shows `project-context-reader@personal` as installed and enabled, and tell me how to invoke it in a new Codex Local task. Only change the cloned plugin directory and the personal marketplace file required by its installer.
+Install https://github.com/dangzitou/codex-context-reader as a personal ChatGPT desktop plugin on this computer. Clone it into the required home-directory plugins path for this operating system, but inspect an existing target first and do not overwrite unrelated files. Run its documented npm installer, verify that `codex plugin list` shows `project-context-reader@personal` as installed and enabled, and tell me how to invoke it in a new local project chat. Only change the cloned plugin directory and the personal marketplace file required by its installer.
 ```
 
-The prompt installs the plugin once. Selecting or switching a project later happens with `select_project` inside a local Codex session; it does not require another install or restart.
+The prompt installs the plugin once. Selecting or switching a project later happens with `select_project` inside a new local project chat; it does not require another install or restart.
 
 ### macOS
 
@@ -101,7 +102,7 @@ If the plugin does not appear, restart the ChatGPT desktop app once after this i
 
 ### Verify
 
-In the ChatGPT desktop app, choose **Codex**, create a **Local** task, type `@Project Context Reader`, and send a request with an absolute local path:
+In the ChatGPT desktop app, select **Work in a project**, attach the project folder, and create a new chat from that project. Type `/mcp` and confirm that `project-context-reader` is connected. Then type `@Project Context Reader` and send a request with an absolute local path:
 
 ```text
 Read /Users/alex/work/payments-service. First inspect the project, then propose an implementation plan. Do not modify files.
@@ -113,7 +114,7 @@ On Windows, use a drive-letter path:
 Read C:\Users\Alex\source\payments-service. First inspect the project, then propose an implementation plan. Do not modify files.
 ```
 
-Codex asks you to approve `select_project`. That selection is kept only in the current MCP session. To switch projects, state the new absolute path in the same task; no configuration edit or restart is required.
+ChatGPT asks you to approve `select_project`. That selection is kept only in the current MCP session. To switch projects, state the new absolute path in the same chat; no configuration edit or restart is required.
 
 ## Tools
 
@@ -155,7 +156,7 @@ The test starts the server over stdio, performs an MCP initialization, checks th
 
 # 中文
 
-Codex Context Reader 是一个面向 **ChatGPT 桌面端 Codex 本地任务**、Codex CLI 和 Codex IDE 扩展的只读 MCP 插件。它让 Codex 在你确认后按需检索本地项目，而不是把整个仓库或大量文件直接放进对话。
+Codex Context Reader 是一个面向 **ChatGPT 桌面端本地项目**和 Codex 的只读 MCP 插件。它让 ChatGPT 或 Codex 在你确认后按需检索本地项目，而不是把整个仓库或大量文件直接放进对话。
 
 它的目标是减少无关代码进入上下文，从而节省不必要的 token。实际 token 消耗仍取决于模型和具体提问。
 
@@ -163,11 +164,12 @@ Codex Context Reader 是一个面向 **ChatGPT 桌面端 Codex 本地任务**、
 
 | 使用界面 | 本地项目工具 |
 | --- | --- |
-| ChatGPT 桌面端的 **Codex → Local** 任务 | 支持 |
-| Codex CLI 或 Codex IDE 扩展 | 支持 |
-| 普通 ChatGPT Chat（`kind: chatgpt`）或网页版 ChatGPT | 此本地 stdio 插件不支持 |
+| ChatGPT 桌面端的**本地项目**聊天或 ChatGPT Work | 支持；安装后需新建聊天 |
+| ChatGPT 桌面端的 **Codex → Local** 任务或 Codex CLI | 支持 |
+| 未绑定本地项目的既有 Quick Chat | 插件可能显示但没有本机工具目录；请新建本地项目聊天 |
+| 网页版或移动端 ChatGPT | 此本地 stdio 服务不支持 |
 
-普通 Chat 可以显示 `@Project Context Reader` 提及，但不会获得本机工具目录。请切换到 **Codex → Local** 任务后使用。插件进程运行在本机，无法直接附着到托管的 Chat 会话。
+选择 **在项目中工作**，绑定本地目录，并从该项目新建聊天。发送请求前先输入 `/mcp`，确认 `project-context-reader` 已连接。插件进程运行在本机，网页版或移动端的托管会话无法启动它。
 
 ## 功能
 
@@ -181,25 +183,25 @@ Codex Context Reader 是一个面向 **ChatGPT 桌面端 Codex 本地任务**、
 
 ## 安装
 
-请按上方的 [macOS](#macos) 或 [Windows](#windows-powershell) 步骤安装。首次安装后重启一次 ChatGPT 桌面端即可；之后在 Codex 本地任务中切换项目时只需提供新的绝对路径。
+请按上方的 [macOS](#macos) 或 [Windows](#windows-powershell) 步骤安装。首次安装后重启一次 ChatGPT 桌面端即可；之后在新的本地项目聊天中切换项目时只需提供新的绝对路径。
 
 ### 让 Codex 自动安装
 
 把下面整段直接发给本机的 Codex 即可。它会根据当前系统选择 macOS 或 Windows 的正确路径：
 
 ```text
-请把 https://github.com/dangzitou/codex-context-reader 安装为这台电脑上 ChatGPT 桌面端的个人插件。请按当前操作系统把仓库 clone 到用户主目录下该插件要求的 plugins 路径；如果目标目录已经存在，先检查内容，不要覆盖无关文件。运行仓库 README 中的 npm 安装脚本，随后用 `codex plugin list` 验证 `project-context-reader@personal` 已安装且已启用，并告诉我如何在新建 Codex 本地任务中调用它。除克隆出的插件目录和安装脚本必需的个人 marketplace 配置文件外，不要修改其他文件。
+请把 https://github.com/dangzitou/codex-context-reader 安装为这台电脑上 ChatGPT 桌面端的个人插件。请按当前操作系统把仓库 clone 到用户主目录下该插件要求的 plugins 路径；如果目标目录已经存在，先检查内容，不要覆盖无关文件。运行仓库 README 中的 npm 安装脚本，随后用 `codex plugin list` 验证 `project-context-reader@personal` 已安装且已启用，并告诉我如何在新建本地项目聊天中调用它。除克隆出的插件目录和安装脚本必需的个人 marketplace 配置文件外，不要修改其他文件。
 ```
 
-这段提示词只需用于首次安装。之后在 Codex 本地任务中用 `select_project` 选择或切换项目，不需要再次安装或重启。
+这段提示词只需用于首次安装。之后在本地项目聊天中用 `select_project` 选择或切换项目，不需要再次安装或重启。
 
-在 ChatGPT 桌面端选择 **Codex**，新建 **Local** 任务后输入：
+在 ChatGPT 桌面端选择 **在项目中工作**，绑定项目目录并新建聊天；先用 `/mcp` 确认 `project-context-reader` 已连接后输入：
 
 ```text
 使用 Project Context Reader 读取 /Users/你的用户名/work/项目名。先了解项目结构和关键代码，再给我实施方案；不要修改文件。
 ```
 
-出现 `select_project` 确认时，核对路径后批准即可。随后要切换项目时，直接告诉 Codex 新路径，无须再次安装或重启。
+出现 `select_project` 确认时，核对路径后批准即可。随后要切换项目时，直接告诉 ChatGPT 新路径，无须再次安装或重启。
 
 ## 安全与数据边界
 
