@@ -1,127 +1,85 @@
 # Codex Context Reader
 
-A read-only [Model Context Protocol](https://modelcontextprotocol.io/) plugin for **local projects in the ChatGPT desktop app** and Codex. It lets ChatGPT or Codex inspect a local project only when you select it, retrieving code on demand instead of pasting an entire repository into a conversation.
+A read-only [Model Context Protocol](https://modelcontextprotocol.io/) server for letting **regular ChatGPT Chat** inspect a user-selected local project without pasting an entire repository into the conversation.
 
-This is intended to reduce unnecessary prompt context and token use. Actual token consumption depends on the model and the questions asked.
+It returns only the overview, search matches, and bounded file excerpts needed for the question. This reduces unrelated context and token use. Actual usage depends on the model and request.
 
-[中文](#中文) · [ChatGPT Chat](#use-in-regular-chatgpt-chat) · [Installation](#installation) · [Security](#security) · [Contributing](CONTRIBUTING.md)
+[中文](#中文) · [Install](#install-for-regular-chatgpt-chat) · [Security](#security) · [Contributing](CONTRIBUTING.md)
 
-## Where it runs
+## Install for regular ChatGPT Chat
 
-| Surface | Local project tools |
-| --- | --- |
-| ChatGPT desktop app, **local project** chat or ChatGPT Work | Supported directly |
-| ChatGPT desktop app, **Codex → Local** task or Codex CLI | Supported directly |
-| Regular ChatGPT Chat, desktop or web | Supported through Secure MCP Tunnel |
-| Mobile ChatGPT | Connect through a running Secure MCP Tunnel |
+### Recommended: give this prompt to a local Codex agent
 
-Choose **Work in a project**, attach the local folder, and start a new chat from that project for direct local use. For regular ChatGPT Chat, follow [Use in regular ChatGPT Chat](#use-in-regular-chatgpt-chat).
+Paste the following into a **local Codex agent** on the computer that holds the project. It completes the install, test, and private Tunnel preparation. It deliberately leaves only account-bound actions and hidden-key entry to you.
 
-## What it does
+```text
+Set up https://github.com/dangzitou/codex-context-reader for regular ChatGPT Chat on this computer. Work carefully and make the smallest changes needed.
 
-- Select a local project for the current MCP session without restarting ChatGPT or Codex.
-- Show a compact project and Git overview.
-- Search literal code text with `ripgrep`.
-- Read bounded file excerpts with line numbers.
-- Summarize uncommitted Git changes and recent commits.
+1. Detect macOS, Linux, or Windows. Inspect any existing target before changing it. Clone or update the repository at the required personal-plugin path: ~/plugins/project-context-reader on macOS/Linux or %USERPROFILE%\plugins\project-context-reader on Windows. Do not overwrite unrelated files.
+2. Ensure Node.js 18+, Git, and ripgrep are available. Run npm test and npm run install:plugin. Verify codex plugin list shows project-context-reader@personal as installed and enabled.
+3. Download the current tunnel-client only from the official OpenAI release or Platform Tunnel page. Verify its SHA-256 against the official checksum. Keep it under a user-owned local directory and set TUNNEL_CLIENT_BIN for the current terminal; do not put it in this repository.
+4. If I provide a tunnel_id, run npm run chat:tunnel -- --configure --tunnel-id <tunnel_id>. If I do not provide one, tell me that I must create a Tunnel in Platform first. Never create, request, print, store, or paste an API key into chat, files, Git, shell history, or logs.
+5. Tell me the one remaining command to run in my own terminal: npm run chat:tunnel -- --prompt-key. Do not start the Tunnel yourself unless I have entered the runtime key locally through that hidden prompt.
+6. After the Tunnel is ready, tell me the exact ChatGPT steps: enable Developer mode, create a Plugins → Tunnel connection, then add it to a new regular Chat.
 
-It never modifies project files, runs project code, reads `.git` metadata, or returns likely secret files such as `.env`, PEM, and key files.
-
-## How it saves context
-
-Instead of attaching a repository or pasting files into ChatGPT, ask a question and let the model retrieve only the relevant overview, search results, and file ranges. This keeps most unrelated code outside the model context.
-
-```mermaid
-flowchart LR
-  U[Your Codex Local request] --> C[Local Codex host]
-  C -->|approved select_project| P[Selected local project]
-  C -->|overview / search / excerpts| P
-  P -->|small, relevant results| C
-  C --> A[Evidence-backed plan]
+Do not expose the local project to the public internet. Do not modify any project selected for reading.
 ```
 
-## Requirements
+### What you must do yourself
 
-- ChatGPT desktop app with a local project chat or ChatGPT Work, or Codex CLI.
-- [Codex CLI](https://developers.openai.com/codex/cli/) on `PATH` for the one-command installer.
-- Node.js 18 or later.
-- [`ripgrep`](https://github.com/BurntSushi/ripgrep) (`rg`) for code search.
-- Git is optional, but enables branch, status, diff, and commit context.
+| Step | Why it stays with you |
+| --- | --- |
+| Create a Tunnel in [Platform settings](https://platform.openai.com/settings/organization/security/tunnels) | It belongs to your OpenAI organization and ChatGPT workspace. |
+| Create a runtime API key | It is a credential. Never paste it into ChatGPT, Codex, or an issue. |
+| Enter the key in a local terminal | The launcher hides the input and does not save it. |
+| Enable ChatGPT Developer mode and create the connection | This changes your ChatGPT account settings. |
 
-## Use in regular ChatGPT Chat
+### Start the private Tunnel
 
-A normal ChatGPT Chat runs remotely, so it cannot start this local stdio server by itself. [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels) connects the already-tested server on your computer to a developer-mode ChatGPT app through outbound HTTPS; your project directory remains private and no inbound firewall port is opened.
-
-### One-time setup
-
-1. In [Platform tunnel settings](https://platform.openai.com/settings/organization/security/tunnels), create a tunnel associated with the ChatGPT workspace you will use. Keep its `tunnel_id`.
-2. Create a runtime API key permitted to use that tunnel. Do not put it in this repository or in a ChatGPT prompt.
-3. Download `tunnel-client` from the Platform tunnel settings page, then initialize it beside this plugin.
-
-macOS/Linux:
+After the agent has installed the repository and you have a `tunnel_id`, configure the profile once:
 
 ```sh
-export TUNNEL_CLIENT_BIN="/absolute/path/to/tunnel-client"
+cd "$HOME/plugins/project-context-reader"
 npm run chat:tunnel -- --configure --tunnel-id "your-tunnel-id"
-# Preferred: prompt for the key without echoing or saving it
-npm run chat:tunnel -- --prompt-key
-# Or use an environment variable in this terminal only
-export CONTROL_PLANE_API_KEY="your-runtime-key"
-npm run chat:tunnel
 ```
 
-Windows PowerShell:
+On Windows PowerShell, use:
 
 ```powershell
-$env:TUNNEL_CLIENT_BIN = "C:\absolute\path\to\tunnel-client.exe"
+Set-Location "$env:USERPROFILE\plugins\project-context-reader"
 npm run chat:tunnel -- --configure --tunnel-id "your-tunnel-id"
-# Preferred: prompt for the key without echoing or saving it
-npm run chat:tunnel -- --prompt-key
-# Or use an environment variable in this PowerShell window only
-$env:CONTROL_PLANE_API_KEY = "your-runtime-key"
-npm run chat:tunnel
 ```
 
-`chat:tunnel -- --configure` writes the `project-context-reader` profile once. `chat:tunnel` then runs `doctor --explain` and keeps the tunnel in the foreground. Later runs need only `npm run chat:tunnel -- --prompt-key` or a terminal-only `CONTROL_PLANE_API_KEY`. A healthy client reports `ready`; if it stops, Chat cannot call the tools.
+Then start it whenever you want to use regular ChatGPT Chat:
 
-### Add it to ChatGPT Chat
+```sh
+npm run chat:tunnel -- --prompt-key
+```
 
-1. In ChatGPT Settings → Security and login, turn on **Developer mode**.
-2. Open **Plugins**, select **+**, choose **Tunnel**, then select or paste the `tunnel_id`.
-3. Review the discovered tools and create the app connection.
-4. Start a new regular Chat, add the new connection from the tools menu, then send:
+The key input is hidden and stays only in the launched process environment. `doctor --explain` runs before the Tunnel starts. Keep this terminal open; wait until it reports `ready`.
+
+### Add the connection in ChatGPT
+
+1. In ChatGPT Settings → **Security and login**, enable **Developer mode**.
+2. Open **Plugins**, choose **+**, choose **Tunnel**, and select or paste your `tunnel_id`.
+3. Review the discovered tools and create the connection.
+4. Start a new regular Chat, add the connection from the tools menu, and send:
 
 ```text
 Use Project Context Reader to read /Users/alex/work/payments-service. First inspect the project and key code, then propose an implementation plan. Do not modify files.
 ```
 
-ChatGPT should ask before `select_project`. This tool only selects a directory in memory for the current MCP session. To switch projects, provide another absolute path in the same chat; no restart is needed.
+ChatGPT selects the directory through `select_project`, returns a short-lived project ID, and uses it for subsequent reads. To switch projects, provide another absolute path in the same chat.
 
-> Secure MCP Tunnel is for private developer-mode use. It is not a public plugin distribution mechanism. Publishing this MCP server for everyone would require a stable public HTTPS endpoint and authentication.
+## Direct local use
 
-## Installation
+For a local project chat, ChatGPT Work, Codex Local, or Codex CLI, install the plugin and use `@Project Context Reader`. A Secure MCP Tunnel is only needed for remote ChatGPT Chat, web, and mobile.
 
-The plugin must be cloned under your home directory because ChatGPT's personal marketplace resolves plugins from `~/plugins/` (or `%USERPROFILE%\\plugins\\` on Windows).
+### Manual installation
 
-### Install with Codex
+The personal marketplace expects the source directory below.
 
-You can paste this prompt directly into a local Codex chat. It chooses the correct macOS or Windows path itself:
-
-```text
-Install https://github.com/dangzitou/codex-context-reader as a personal ChatGPT desktop plugin on this computer. Clone it into the required home-directory plugins path for this operating system, but inspect an existing target first and do not overwrite unrelated files. Run its documented npm installer, verify that `codex plugin list` shows `project-context-reader@personal` as installed and enabled, and tell me how to invoke it in a new local project chat. Only change the cloned plugin directory and the personal marketplace file required by its installer.
-```
-
-The prompt installs the plugin once. Selecting or switching a project later happens with `select_project` inside a new local project chat; it does not require another install or restart.
-
-### macOS
-
-Install the prerequisites if needed:
-
-```sh
-brew install node ripgrep git
-```
-
-Clone and install the plugin:
+macOS/Linux:
 
 ```sh
 mkdir -p "$HOME/plugins"
@@ -130,17 +88,7 @@ cd "$HOME/plugins/project-context-reader"
 npm run install:plugin
 ```
 
-The installer creates or updates `~/.agents/plugins/marketplace.json` and installs `project-context-reader` from your Personal marketplace. If the plugin does not appear, restart the ChatGPT desktop app once after this initial installation.
-
-### Windows (PowerShell)
-
-Install Node.js LTS and Git from their official installers, then install ripgrep:
-
-```powershell
-winget install BurntSushi.ripgrep.MSVC
-```
-
-Clone and install the plugin:
+Windows PowerShell:
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:USERPROFILE\plugins" | Out-Null
@@ -149,53 +97,34 @@ Set-Location "$env:USERPROFILE\plugins\project-context-reader"
 npm run install:plugin
 ```
 
-If the plugin does not appear, restart the ChatGPT desktop app once after this initial installation. If `codex` is not on `PATH`, open the app's Plugins page and install **Project Context Reader** from the Personal marketplace after running the script.
+Requirements: Node.js 18+, Git, and [`ripgrep`](https://github.com/BurntSushi/ripgrep). Git context is optional.
 
-### Verify
-
-In the ChatGPT desktop app, select **Work in a project**, attach the project folder, and create a new chat from that project. Type `/mcp` and confirm that `project-context-reader` is connected. Then type `@Project Context Reader` and send a request with an absolute local path:
-
-```text
-Read /Users/alex/work/payments-service. First inspect the project, then propose an implementation plan. Do not modify files.
-```
-
-On Windows, use a drive-letter path:
-
-```text
-Read C:\Users\Alex\source\payments-service. First inspect the project, then propose an implementation plan. Do not modify files.
-```
-
-ChatGPT asks you to approve `select_project`. That selection is kept only in the current MCP session. To switch projects, state the new absolute path in the same chat; no configuration edit or restart is required.
-
-## Tools
+## What it reads
 
 | Tool | Purpose |
 | --- | --- |
-| `select_project` | Select one absolute local directory for this session. Requires approval. |
-| `project_overview` | Read structure, branch, working-tree status, and recent commits for a selected project ID. |
-| `search_code` | Search literal text in the selected project ID while excluding dependencies, output, and likely secret files. |
-| `read_file` | Return up to 400 lines from a file in the selected project ID. |
-| `git_context` | Read Git status, diff summary, and five recent commits for a selected project ID. |
+| `select_project` | Select an absolute local directory after user approval. Returns a random project ID. |
+| `project_overview` | Read root structure, branch, working-tree status, and recent commits. |
+| `search_code` | Search literal text in the selected project. |
+| `read_file` | Return up to 400 lines from a selected-project file. |
+| `git_context` | Read Git status, diff summary, and recent commits. |
 
 ## Security
 
-- The project is selected explicitly through an approval-gated tool.
-- Selection IDs are random, held only in memory, and expire after 30 minutes or when the MCP server stops.
-- File reads stay inside the selected directory after resolving symlinks.
-- The server blocks `.git`, `node_modules`, common output directories, `.env*`, and common key-file extensions.
-- This is a local MCP server. The code excerpts it returns are still sent to the ChatGPT conversation. Use it only with repositories that your organization permits you to share with ChatGPT.
-
-Please report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+- Reads stay within the chosen directory after resolving symlinks.
+- Project IDs are random, memory-only, and expire after 30 minutes or when the server stops.
+- `.git`, dependencies, output directories, `.env*`, certificates, and common key files are blocked.
+- The server does not modify project files or run project code.
+- Tool results become ChatGPT context. Use only with repositories your organization permits you to share.
+- Secure MCP Tunnel opens an outbound connection; it does not open an inbound port or publish the project on the internet. [OpenAI Tunnel documentation](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
 
 ## Development
 
 ```sh
-git clone https://github.com/dangzitou/codex-context-reader.git
-cd codex-context-reader
 npm test
 ```
 
-The test starts the server over stdio, performs an MCP initialization, checks the tool catalog, selects a project, reads a file, searches code, and verifies path-traversal rejection.
+The tests exercise MCP initialization, project selection, token-scoped reads, traversal rejection, and Tunnel-launcher argument generation.
 
 ## License
 
@@ -207,108 +136,132 @@ The test starts the server over stdio, performs an MCP initialization, checks th
 
 # 中文
 
-Codex Context Reader 是一个面向 **ChatGPT 桌面端本地项目**和 Codex 的只读 MCP 插件。它让 ChatGPT 或 Codex 在你确认后按需检索本地项目，而不是把整个仓库或大量文件直接放进对话。
+Codex Context Reader 是一个只读 [MCP](https://modelcontextprotocol.io/) 服务，让**普通 ChatGPT Chat** 在用户确认后按需读取本地项目，而不用把整个仓库粘贴进对话。
 
-它的目标是减少无关代码进入上下文，从而节省不必要的 token。实际 token 消耗仍取决于模型和具体提问。
+它只返回解决问题所需的项目概览、搜索结果和有限文件片段，减少无关上下文和 token 消耗。实际消耗取决于模型和提问。
 
-## 适用范围
+[安装](#在普通-chatgpt-chat-中安装) · [安全](#安全与数据边界) · [贡献](CONTRIBUTING.md)
 
-| 使用界面 | 本地项目工具 |
+## 在普通 ChatGPT Chat 中安装
+
+### 推荐：把下面提示词交给本机 Codex Agent
+
+将下面整段发送给保存项目的电脑上的 **本机 Codex Agent**。它会完成安装、测试和私有 Tunnel 的准备工作；只有账户权限和隐藏输入密钥需要你自己操作。
+
+```text
+请在这台电脑上把 https://github.com/dangzitou/codex-context-reader 配置为可供普通 ChatGPT Chat 使用。请谨慎执行，只做必要改动。
+
+1. 判断当前系统是 macOS、Linux 还是 Windows；修改前先检查目标目录。将仓库 clone 或更新到个人插件要求的路径：macOS/Linux 使用 ~/plugins/project-context-reader，Windows 使用 %USERPROFILE%\plugins\project-context-reader。不要覆盖无关文件。
+2. 确保 Node.js 18+、Git 和 ripgrep 可用。运行 npm test 与 npm run install:plugin，并确认 codex plugin list 显示 project-context-reader@personal 已安装且已启用。
+3. 仅从 OpenAI 官方发布页或 Platform Tunnel 页面下载最新 tunnel-client。用官方 SHA-256 清单校验，将它放在用户拥有的本地目录，并仅为当前终端设置 TUNNEL_CLIENT_BIN；不要把二进制放进本仓库。
+4. 如果我提供 tunnel_id，运行 npm run chat:tunnel -- --configure --tunnel-id <tunnel_id>；如果没有，明确告诉我需要先在 Platform 创建 Tunnel。绝不创建、索取、打印、保存或把 API key 粘贴到聊天、文件、Git、Shell 历史或日志中。
+5. 告诉我唯一需要在我自己终端运行的命令：npm run chat:tunnel -- --prompt-key。除非我已在本机通过该隐藏输入方式输入 runtime key，否则不要替我启动 Tunnel。
+6. Tunnel ready 后，告诉我 ChatGPT 的精确操作：开启 Developer mode，在 Plugins → Tunnel 新建连接，再把连接添加到新建普通 Chat。
+
+不要把本地项目暴露到公网，也不要修改任何供读取的项目文件。
+```
+
+### 必须由你自己完成的步骤
+
+| 操作 | 原因 |
 | --- | --- |
-| ChatGPT 桌面端的**本地项目**聊天或 ChatGPT Work | 支持；安装后需新建聊天 |
-| ChatGPT 桌面端的 **Codex → Local** 任务或 Codex CLI | 支持 |
-| 未绑定本地项目的既有 Quick Chat | 插件可能显示但没有本机工具目录；请新建本地项目聊天 |
-| 网页版或移动端 ChatGPT | 此本地 stdio 服务不支持 |
+| 在 [Platform Tunnel 设置](https://platform.openai.com/settings/organization/security/tunnels) 创建 Tunnel | 它属于你的 OpenAI 组织和 ChatGPT workspace。 |
+| 创建 runtime API key | 它是凭据，绝不能粘贴到 ChatGPT、Codex 或 Issue。 |
+| 在本机终端输入 key | 启动器会隐藏输入，不保存该 key。 |
+| 开启 ChatGPT Developer mode 并创建连接 | 这会修改你的 ChatGPT 账户设置。 |
 
-选择 **在项目中工作**，绑定本地目录，并从该项目新建聊天。发送请求前先输入 `/mcp`，确认 `project-context-reader` 已连接。插件进程运行在本机，网页版或移动端的托管会话无法启动它。
+### 启动私有 Tunnel
 
-## 功能
-
-- 在同一会话中动态切换本地项目，不需要重启 ChatGPT 或 Codex。
-- 获取项目结构、Git 分支和近期提交概览。
-- 使用 `ripgrep` 精确搜索代码。
-- 按行读取最多 400 行文件内容。
-- 获取未提交改动摘要和近期 Git 提交。
-
-插件不修改任何项目文件，不执行项目代码，不读取 `.git` 内容，并会屏蔽 `.env`、证书和常见密钥文件。
-
-## 在普通 ChatGPT Chat 中使用
-
-普通 ChatGPT Chat 运行在远端，不能自行启动本机的 stdio 服务。通过 [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)，可以将这台电脑上已验证的服务经由**出站 HTTPS**接入开发者模式的 ChatGPT 应用；项目目录仍在内网，不需要开放入站端口。
-
-### 一次性配置
-
-1. 在 [Platform tunnel settings](https://platform.openai.com/settings/organization/security/tunnels) 创建 Tunnel，并关联将要使用的 ChatGPT workspace，记录 `tunnel_id`。
-2. 创建具有该 Tunnel 使用权限的 runtime API key。不要把它写入仓库或发到 ChatGPT 对话。
-3. 从 Platform tunnel settings 下载 `tunnel-client`，然后在本插件旁初始化：
-
-macOS/Linux：
+Agent 完成安装、你获得 `tunnel_id` 后，首次配置 profile：
 
 ```sh
-export TUNNEL_CLIENT_BIN="/tunnel-client 的绝对路径"
+cd "$HOME/plugins/project-context-reader"
 npm run chat:tunnel -- --configure --tunnel-id "你的 tunnel_id"
-# 推荐：隐藏输入 key，不回显也不保存
-npm run chat:tunnel -- --prompt-key
-# 或仅在当前终端设置环境变量
-export CONTROL_PLANE_API_KEY="你的 runtime key"
-npm run chat:tunnel
 ```
 
 Windows PowerShell：
 
 ```powershell
-$env:TUNNEL_CLIENT_BIN = "C:\tunnel-client.exe 的绝对路径"
+Set-Location "$env:USERPROFILE\plugins\project-context-reader"
 npm run chat:tunnel -- --configure --tunnel-id "你的 tunnel_id"
-# 推荐：隐藏输入 key，不回显也不保存
-npm run chat:tunnel -- --prompt-key
-# 或仅在当前 PowerShell 窗口设置环境变量
-$env:CONTROL_PLANE_API_KEY = "你的 runtime key"
-npm run chat:tunnel
 ```
 
-`chat:tunnel -- --configure` 首次写入 `project-context-reader` profile。`chat:tunnel` 随后执行 `doctor --explain`，并以前台方式保持 Tunnel 运行。以后只需 `npm run chat:tunnel -- --prompt-key`，或仅在当前终端设置 `CONTROL_PLANE_API_KEY`。状态为 `ready` 时，Chat 才能调用工具。
+之后每次要在普通 ChatGPT Chat 中使用时，运行：
 
-### 在 Chat 中添加连接
+```sh
+npm run chat:tunnel -- --prompt-key
+```
+
+该命令会隐藏输入 key，key 只存在于启动后的进程环境中。启动前会执行 `doctor --explain`；保持这个终端打开，看到 `ready` 后再使用 Chat。
+
+### 在 ChatGPT 中添加连接
 
 1. 打开 ChatGPT 设置 → **Security and login**，开启 **Developer mode**。
 2. 打开 **Plugins**，点击 **+**，连接方式选 **Tunnel**，选择或粘贴 `tunnel_id`。
-3. 核对发现的工具并创建应用连接。
-4. 新建普通 Chat，在工具菜单中添加该连接，然后发送：
+3. 核对发现的工具并创建连接。
+4. 新建普通 Chat，在工具菜单添加该连接，发送：
 
 ```text
 使用 Project Context Reader 读取 /Users/你的用户名/work/项目名。先了解项目结构和关键代码，再给我实施方案；不要修改文件。
 ```
 
-ChatGPT 应在调用 `select_project` 前请求确认。该操作只在当前 MCP 会话的内存中选择目录；同一 Chat 中提供另一个绝对路径即可切换，无需重启。
+ChatGPT 会通过 `select_project` 选择目录，得到短期有效的项目 ID，并在后续读取中使用它。同一个 Chat 中提供另一个绝对路径即可切换项目。
 
-> Secure MCP Tunnel 用于私有的开发者模式连接，不是公开分发方案。若要让所有用户直接安装使用，需要稳定的公网 HTTPS MCP 服务和认证机制。
+## 本地直接使用
 
-## 安装
+本地项目聊天、ChatGPT Work、Codex Local 或 Codex CLI 可直接安装插件后使用 `@Project Context Reader`。只有远端普通 ChatGPT Chat、网页版和移动端才需要 Secure MCP Tunnel。
 
-请按上方的 [macOS](#macos) 或 [Windows](#windows-powershell) 步骤安装。首次安装后重启一次 ChatGPT 桌面端即可；之后在新的本地项目聊天中切换项目时只需提供新的绝对路径。
+### 手动安装
 
-### 让 Codex 自动安装
+个人 marketplace 要求源码放在以下目录。
 
-把下面整段直接发给本机的 Codex 即可。它会根据当前系统选择 macOS 或 Windows 的正确路径：
+macOS/Linux：
 
-```text
-请把 https://github.com/dangzitou/codex-context-reader 安装为这台电脑上 ChatGPT 桌面端的个人插件。请按当前操作系统把仓库 clone 到用户主目录下该插件要求的 plugins 路径；如果目标目录已经存在，先检查内容，不要覆盖无关文件。运行仓库 README 中的 npm 安装脚本，随后用 `codex plugin list` 验证 `project-context-reader@personal` 已安装且已启用，并告诉我如何在新建本地项目聊天中调用它。除克隆出的插件目录和安装脚本必需的个人 marketplace 配置文件外，不要修改其他文件。
+```sh
+mkdir -p "$HOME/plugins"
+git clone https://github.com/dangzitou/codex-context-reader.git "$HOME/plugins/project-context-reader"
+cd "$HOME/plugins/project-context-reader"
+npm run install:plugin
 ```
 
-这段提示词只需用于首次安装。之后在本地项目聊天中用 `select_project` 选择或切换项目，不需要再次安装或重启。
+Windows PowerShell：
 
-在 ChatGPT 桌面端选择 **在项目中工作**，绑定项目目录并新建聊天；先用 `/mcp` 确认 `project-context-reader` 已连接后输入：
-
-```text
-使用 Project Context Reader 读取 /Users/你的用户名/work/项目名。先了解项目结构和关键代码，再给我实施方案；不要修改文件。
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\plugins" | Out-Null
+git clone https://github.com/dangzitou/codex-context-reader.git "$env:USERPROFILE\plugins\project-context-reader"
+Set-Location "$env:USERPROFILE\plugins\project-context-reader"
+npm run install:plugin
 ```
 
-出现 `select_project` 确认时，核对路径后批准即可。随后要切换项目时，直接告诉 ChatGPT 新路径，无须再次安装或重启。
+依赖：Node.js 18+、Git 和 [`ripgrep`](https://github.com/BurntSushi/ripgrep)；Git 上下文为可选能力。
+
+## 读取范围
+
+| 工具 | 用途 |
+| --- | --- |
+| `select_project` | 在用户确认后选择绝对路径，返回随机项目 ID。 |
+| `project_overview` | 读取根目录结构、分支、工作区状态和近期提交。 |
+| `search_code` | 在选定项目中搜索文本。 |
+| `read_file` | 最多读取选定项目文件的 400 行。 |
+| `git_context` | 读取 Git 状态、差异摘要和近期提交。 |
 
 ## 安全与数据边界
 
-- `select_project` 返回随机项目 ID，仅保存在内存中；30 分钟后或 MCP 服务停止时失效。
-- 读取范围被限制在已选择项目内，符号链接也会校验真实路径。
-- 插件返回到 ChatGPT 的代码片段会成为对话上下文；请仅对公司允许提供给 ChatGPT 的代码库使用。
+- 解析符号链接后，读取仍被限制在已选择目录内。
+- 项目 ID 随机生成，仅保存在内存中；30 分钟后或服务停止时失效。
+- `.git`、依赖目录、输出目录、`.env*`、证书和常见密钥文件均被拦截。
+- 服务不修改项目文件，也不执行项目代码。
+- 工具结果会成为 ChatGPT 上下文，只能用于组织允许对外提供的仓库。
+- Secure MCP Tunnel 是出站连接，不开放入站端口，也不会把项目发布到公网。[OpenAI Tunnel 文档](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
 
-欢迎阅读 [贡献指南](CONTRIBUTING.md)，并按 [MIT 许可证](LICENSE) 使用和分发本项目。
+## 开发
+
+```sh
+npm test
+```
+
+测试覆盖 MCP 初始化、项目选择、项目 ID 限定读取、路径穿越拒绝和 Tunnel 启动参数生成。
+
+## 许可证
+
+[MIT](LICENSE) © Deng Zitao

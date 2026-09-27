@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { access } from "node:fs/promises";
+import { access, readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,8 +25,21 @@ function quote(value) {
   return /\s/.test(value) ? `"${value.replaceAll('"', '\\"')}"` : value;
 }
 async function defaultClient() {
-  const candidate = join(homedir(), ".local", "share", "codex-context-reader", "tunnel-client", "v0.0.15", "extracted", "tunnel-client");
-  try { await access(candidate); return candidate; } catch { return "tunnel-client"; }
+  const base = process.platform === "win32"
+    ? join(process.env.LOCALAPPDATA ?? homedir(), "codex-context-reader", "tunnel-client")
+    : join(homedir(), ".local", "share", "codex-context-reader", "tunnel-client");
+  try {
+    const versions = (await readdir(base, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort()
+      .reverse();
+    for (const version of versions) {
+      const candidate = join(base, version, "extracted", process.platform === "win32" ? "tunnel-client.exe" : "tunnel-client");
+      try { await access(candidate); return candidate; } catch { /* try an older release */ }
+    }
+  } catch { /* use PATH below */ }
+  return "tunnel-client";
 }
 function invoke(client, toolArgs, env = process.env) {
   const result = spawnSync(client, toolArgs, { stdio: "inherit", env });
