@@ -1,6 +1,6 @@
 # Codex Context Reader
 
-Codex Context Reader 是一个只读 [MCP](https://modelcontextprotocol.io/) 服务，让 ChatGPT 或 Codex 在用户确认后按需读取本地项目，不必把整个仓库粘贴到对话里。
+把 Plus/Pro 的普通 Chat 用于只读项目分析，把 Codex 额度留给改代码和跑测试。Codex Context Reader 是一个只读 [MCP](https://modelcontextprotocol.io/) 服务，通过私有 Tunnel 让 ChatGPT 网页聊天按需读取用户选定的项目。
 
 它只返回项目概览、搜索结果和有限文件片段，减少无关上下文和 token 消耗。实际消耗取决于模型和提问。
 
@@ -10,16 +10,16 @@ Codex Context Reader 是一个只读 [MCP](https://modelcontextprotocol.io/) 服
 
 ## 安装与 ChatGPT 网页端配置
 
-### 推荐：把下面提示词交给本机 Codex Agent
+### 可选：让本机编程助手准备连接
 
-将下面整段发送给保存项目的电脑上的 **本机 Codex Agent**。它会完成安装、测试和私有 Tunnel 准备；账户设置和隐藏输入密钥由你完成。
+将下面整段发送给保存项目的电脑上的编程助手。它会完成安装、测试和私有 Tunnel 准备；账户设置和隐藏输入密钥由你完成。
 
 ```text
-请在这台电脑上配置 https://github.com/dangzitou/codex-context-reader，用于 Codex 和在可用时用于普通 ChatGPT 网页端的只读访问。请谨慎执行，只做必要改动。
+请在这台电脑上配置 https://github.com/dangzitou/codex-context-reader，让普通 ChatGPT 网页聊天通过 Secure MCP Tunnel 只读访问项目。请谨慎执行，只做必要改动。
 
-1. 判断当前系统是 macOS、Linux 还是 Windows；修改前检查目标目录。macOS/Linux 使用 ~/plugins/project-context-reader，Windows 使用 %USERPROFILE%\plugins\project-context-reader。不要覆盖无关文件。
-2. 确保 Node.js 18+、Git 和 ripgrep 可用。运行 npm test 与 npm run install:plugin，并确认 codex plugin list 显示 project-context-reader@personal 已安装且已启用。
-3. 提示我用桌面浏览器打开 chatgpt.com，检查 插件 → 添加 → 创建 MCP 应用。若没有，再检查文档所述的 设置 → 账户安全与登录 → Developer mode。两个入口都没有时停止 ChatGPT-Tunnel 配置；本地 Codex 插件仍可使用。
+1. 判断当前系统是 macOS、Linux 还是 Windows；修改前检查目标目录。macOS/Linux 使用 ~/codex-context-reader，Windows 使用 %USERPROFILE%\codex-context-reader。不要覆盖无关文件。
+2. 确保 Node.js 18+、Git 和 ripgrep 可用。运行 npm test。
+3. 提示我用桌面浏览器打开 chatgpt.com，检查 插件 → 添加 → 创建 MCP 应用。若没有，再检查文档所述的 设置 → 账户安全与登录 → Developer mode。两个入口都没有时停止 ChatGPT-Tunnel 配置。
 4. 我确认可以创建 MCP 应用后：从 OpenAI 官方发布页或 Platform Tunnel 页面下载 tunnel-client，用官方 SHA-256 清单校验，并放在用户拥有的本地目录；不要放进本仓库。
 5. 如果我提供 tunnel_id，运行 npm run chat:tunnel -- --configure --tunnel-id <tunnel_id>；如果没有，告诉我先在 Platform 创建 Tunnel。绝不创建、索取、打印、保存或把 API key 粘贴到聊天、文件、Git、Shell 历史或日志中。
 6. 告诉我唯一需要在我自己终端运行的命令：npm run chat:tunnel -- --prompt-key。除非我已在本机通过隐藏输入方式输入 runtime key，否则不要启动 Tunnel。
@@ -37,21 +37,43 @@ Codex Context Reader 是一个只读 [MCP](https://modelcontextprotocol.io/) 服
 | 创建 runtime API key，并在本机终端输入 | 它是凭据；启动器隐藏输入且不会保存。 |
 | 在 ChatGPT Plugins 中创建 Tunnel 连接 | 这会修改你的 ChatGPT 账户设置。 |
 
-若没有 **创建 MCP 应用**，再检查 [OpenAI 文档中的 Developer mode 设置](https://developers.openai.com/api/docs/guides/developer-mode)：**设置 → 账户安全与登录**。两个入口都没有时，先用下面的本地 Codex 方式；重启 Tunnel 无法让缺失的 ChatGPT 功能出现。
+若没有 **创建 MCP 应用**，再检查 [OpenAI 文档中的 Developer mode 设置](https://developers.openai.com/api/docs/guides/developer-mode)：**设置 → 账户安全与登录**。两个入口都没有时，当前账号无法使用这套 ChatGPT 网页端连接方式；重启 Tunnel 无法让缺失的功能出现。
+
+### 安装并测试服务
+
+依赖：Node.js 18+、Git 和 [`ripgrep`](https://github.com/BurntSushi/ripgrep)；Git 上下文为可选能力。还需按 [OpenAI Tunnel 官方文档](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)安装 `tunnel-client`，校验官方 SHA-256，并将其加入 `PATH`（或在两条启动命令中都用 `--client` 指定可执行文件的绝对路径）。
+
+macOS/Linux：
+
+```sh
+git clone https://github.com/dangzitou/codex-context-reader.git "$HOME/codex-context-reader"
+cd "$HOME/codex-context-reader"
+npm test
+```
+
+Windows PowerShell：
+
+```powershell
+git clone https://github.com/dangzitou/codex-context-reader.git "$env:USERPROFILE\codex-context-reader"
+Set-Location "$env:USERPROFILE\codex-context-reader"
+npm test
+```
+
+如果仓库已经克隆，直接进入现有目录即可。
 
 ### 启动私有 Tunnel
 
-Agent 完成安装、确认可创建 MCP 应用且你获得 `tunnel_id` 后，首次配置 profile：
+安装服务、确认可创建 MCP 应用且获得 `tunnel_id` 后，首次配置 profile：
 
 ```sh
-cd "$HOME/plugins/project-context-reader"
+cd "$HOME/codex-context-reader"
 npm run chat:tunnel -- --configure --tunnel-id "你的-tunnel-id"
 ```
 
 Windows PowerShell：
 
 ```powershell
-Set-Location "$env:USERPROFILE\plugins\project-context-reader"
+Set-Location "$env:USERPROFILE\codex-context-reader"
 npm run chat:tunnel -- --configure --tunnel-id "你的-tunnel-id"
 ```
 
@@ -79,38 +101,12 @@ npm run chat:tunnel -- --prompt-key
 6. 点击 **在聊天中试用**；若有提示，在普通 Chat 中加入该应用。先用无敏感信息的本地项目测试：
 
 ```text
-使用 Project Context Reader 读取 /Users/你的用户名/plugins/project-context-reader。依次调用 select_project、project_overview、search_code 和 read_file，结合文件路径总结所见；不要修改文件。
+使用 Project Context Reader 读取 /Users/你的用户名/codex-context-reader。依次调用 select_project、project_overview、search_code 和 read_file，结合文件路径总结所见；不要修改文件。
 ```
 
 把示例中的用户名换成自己的；Windows 使用完整的 `C:\Users\...` 路径。先确认这份仓库副本不含私有数据。在 Chat 的工具调用详情中确认 `select_project`、`project_overview`、`search_code` 和 `read_file` 都成功返回结果。绿色“已连接”只证明连接建立，不证明已经读取项目。项目 ID 30 分钟后失效，届时重新选择项目；使用期间保持 `tunnel-client` 运行。
 
 OpenAI 的 Secure MCP Tunnel 是私有 MCP 的出站连接，不需要开放入站公网端口。[Tunnel 官方文档](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
-
-## 本地直接使用
-
-Codex Local、Codex CLI 或本地项目聊天可直接安装插件并使用 `@Project Context Reader`。ChatGPT 网页端不能创建 MCP 应用时，使用这条路径。
-
-### 手动安装
-
-macOS/Linux：
-
-```sh
-mkdir -p "$HOME/plugins"
-git clone https://github.com/dangzitou/codex-context-reader.git "$HOME/plugins/project-context-reader"
-cd "$HOME/plugins/project-context-reader"
-npm run install:plugin
-```
-
-Windows PowerShell：
-
-```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\plugins" | Out-Null
-git clone https://github.com/dangzitou/codex-context-reader.git "$env:USERPROFILE\plugins\project-context-reader"
-Set-Location "$env:USERPROFILE\plugins\project-context-reader"
-npm run install:plugin
-```
-
-依赖：Node.js 18+、Git 和 [`ripgrep`](https://github.com/BurntSushi/ripgrep)；Git 上下文为可选能力。
 
 ## 读取范围
 
