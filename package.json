@@ -1,10 +1,9 @@
 {
   "name": "codex-context-reader",
   "version": "0.3.6",
-  "description": "A read-only MCP plugin for selected local projects in Codex and ChatGPT Developer mode.",
+  "description": "A read-only MCP server for selected projects in regular ChatGPT web through Secure MCP Tunnel.",
   "type": "module",
   "scripts": {
-    "install:plugin": "node scripts/install-plugin.mjs",
     "test": "node test-server.mjs && node test-tunnel-script.mjs",
     "chat:tunnel": "node scripts/chat-tunnel.mjs"
   },
@@ -12,7 +11,6 @@
     "chatgpt",
     "mcp",
     "model-context-protocol",
-    "codex",
     "local-repository",
     "token-optimization"
   ],

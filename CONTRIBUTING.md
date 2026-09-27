@@ -14,4 +14,4 @@ Keep changes small and preserve the server's read-only boundary. Add or update t
 
 ## Reporting bugs
 
-Include your operating system, Node.js version, ChatGPT desktop version, exact request, and the MCP error text. Do not include proprietary code, access tokens, or secret file contents.
+Include your operating system, Node.js version, browser version, exact request, and the MCP error text. Do not include proprietary code, access tokens, or secret file contents.

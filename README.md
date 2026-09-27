@@ -1,6 +1,6 @@
 # Codex Context Reader
 
-A read-only [Model Context Protocol](https://modelcontextprotocol.io/) server that lets ChatGPT or Codex inspect a user-selected local project without pasting an entire repository into the conversation.
+Use regular Chat on a Plus/Pro plan for read-only code analysis, leaving Codex usage for edits and tests. Codex Context Reader is a read-only [Model Context Protocol](https://modelcontextprotocol.io/) server that connects ChatGPT web to a user-selected project through a private Tunnel.
 
 It returns only a project overview, search matches, and bounded file excerpts. This reduces unrelated context and token use. Actual usage depends on the model and request.
 
@@ -10,16 +10,16 @@ It returns only a project overview, search matches, and bounded file excerpts. T
 
 ## Install and ChatGPT web setup
 
-### Recommended: give this prompt to a local Codex agent
+### Optional: ask a local coding assistant to prepare the connection
 
-Paste this into a **local Codex agent** on the computer that contains the project. It installs, tests, and prepares the private Tunnel. Account settings and the hidden key stay with you.
+Paste this into a coding assistant on the computer that contains the project. It installs, tests, and prepares the private Tunnel. Account settings and the hidden key stay with you.
 
 ```text
-Set up https://github.com/dangzitou/codex-context-reader on this computer for read-only use with Codex and, if available, regular ChatGPT web. Make the smallest necessary changes.
+Set up https://github.com/dangzitou/codex-context-reader on this computer for read-only use in regular ChatGPT web through Secure MCP Tunnel. Make the smallest necessary changes.
 
-1. Detect macOS, Linux, or Windows. Inspect the target before changing it. Clone or update the repository at ~/plugins/project-context-reader on macOS/Linux, or %USERPROFILE%\plugins\project-context-reader on Windows. Do not overwrite unrelated files.
-2. Ensure Node.js 18+, Git, and ripgrep are available. Run npm test and npm run install:plugin. Verify codex plugin list shows project-context-reader@personal as installed and enabled.
-3. Tell me to open chatgpt.com in a desktop browser and check Plugins → Add → Create MCP app. If unavailable, check the documented Developer mode setting under Settings → Security and login. If neither entry is available, stop the ChatGPT-Tunnel setup; the local Codex plugin can still be used.
+1. Detect macOS, Linux, or Windows. Inspect the target before changing it. Clone or update the repository at ~/codex-context-reader on macOS/Linux, or %USERPROFILE%\codex-context-reader on Windows. Do not overwrite unrelated files.
+2. Ensure Node.js 18+, Git, and ripgrep are available. Run npm test.
+3. Tell me to open chatgpt.com in a desktop browser and check Plugins → Add → Create MCP app. If unavailable, check the documented Developer mode setting under Settings → Security and login. If neither entry is available, stop the ChatGPT-Tunnel setup.
 4. Once I confirm MCP app creation is available: download tunnel-client only from the official OpenAI release or Platform Tunnel page, verify SHA-256 against the official checksum, and keep it in a user-owned local directory. Do not put it in this repository.
 5. If I provide a tunnel_id, run npm run chat:tunnel -- --configure --tunnel-id <tunnel_id>. Otherwise tell me to create a Tunnel in Platform. Never create, request, print, store, or paste an API key into chat, files, Git, shell history, or logs.
 6. Tell me the one remaining command to run in my own terminal: npm run chat:tunnel -- --prompt-key. Do not start the Tunnel unless I have entered the runtime key locally through that hidden prompt.
@@ -37,21 +37,43 @@ Do not expose the local project to the public internet. Do not modify any select
 | Create a runtime API key and enter it in a local terminal | It is a credential; the launcher hides the input and does not save it. |
 | In ChatGPT Plugins, create the Tunnel connection | This changes your ChatGPT account settings. |
 
-If **Create MCP app** is unavailable, check the [documented Developer mode setting](https://developers.openai.com/api/docs/guides/developer-mode) under **Settings → Security and login**. If neither entry appears, use the direct local Codex route below; restarting the Tunnel cannot add a missing ChatGPT feature.
+If **Create MCP app** is unavailable, check the [documented Developer mode setting](https://developers.openai.com/api/docs/guides/developer-mode) under **Settings → Security and login**. If neither entry appears, this ChatGPT web setup is unavailable for your account; restarting the Tunnel cannot add the missing feature.
+
+### Install and test the server
+
+Requirements: Node.js 18+, Git, and [`ripgrep`](https://github.com/BurntSushi/ripgrep). Git context is optional. Install OpenAI's `tunnel-client` using the [official Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels), verify its checksum, and put it on your `PATH` (or use `--client` with its absolute path in both launcher commands).
+
+macOS/Linux:
+
+```sh
+git clone https://github.com/dangzitou/codex-context-reader.git "$HOME/codex-context-reader"
+cd "$HOME/codex-context-reader"
+npm test
+```
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/dangzitou/codex-context-reader.git "$env:USERPROFILE\codex-context-reader"
+Set-Location "$env:USERPROFILE\codex-context-reader"
+npm test
+```
+
+If the repository is already cloned, use its existing directory instead.
 
 ### Start the private Tunnel
 
-After the agent has installed the repository, MCP app creation is available, and you have a `tunnel_id`, configure the profile once:
+After the server is installed, MCP app creation is available, and you have a `tunnel_id`, configure the profile once:
 
 ```sh
-cd "$HOME/plugins/project-context-reader"
+cd "$HOME/codex-context-reader"
 npm run chat:tunnel -- --configure --tunnel-id "your-tunnel-id"
 ```
 
 Windows PowerShell:
 
 ```powershell
-Set-Location "$env:USERPROFILE\plugins\project-context-reader"
+Set-Location "$env:USERPROFILE\codex-context-reader"
 npm run chat:tunnel -- --configure --tunnel-id "your-tunnel-id"
 ```
 
@@ -79,38 +101,12 @@ The key input is hidden and stays only in the launched process environment. `doc
 6. Click **Try in chat**, add the app to a regular Chat if prompted, and test with a nonsensitive local repository:
 
 ```text
-Use Project Context Reader to read /Users/yourname/plugins/project-context-reader. Call select_project, project_overview, search_code, and read_file, then summarize what you found with file paths. Do not modify files.
+Use Project Context Reader to read /Users/yourname/codex-context-reader. Call select_project, project_overview, search_code, and read_file, then summarize what you found with file paths. Do not modify files.
 ```
 
 Replace `yourname` with your username (on Windows, use the full `C:\Users\...` path). Test only if this copy of the repository contains no private data. Check the Chat tool-call details for successful `select_project`, `project_overview`, `search_code`, and `read_file` results. A green Connected badge proves the connection, not that a project was read. The project ID expires after 30 minutes; select the project again when it does. Keep `tunnel-client` running while using Chat.
 
 OpenAI documents Secure MCP Tunnel as an outbound connection for private MCP servers; it does not require an inbound public port. [Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
-
-## Direct local use
-
-For Codex Local, Codex CLI, or a local project chat, install the plugin and use `@Project Context Reader`. This is the route to use when ChatGPT web cannot create an MCP app.
-
-### Manual installation
-
-macOS/Linux:
-
-```sh
-mkdir -p "$HOME/plugins"
-git clone https://github.com/dangzitou/codex-context-reader.git "$HOME/plugins/project-context-reader"
-cd "$HOME/plugins/project-context-reader"
-npm run install:plugin
-```
-
-Windows PowerShell:
-
-```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\plugins" | Out-Null
-git clone https://github.com/dangzitou/codex-context-reader.git "$env:USERPROFILE\plugins\project-context-reader"
-Set-Location "$env:USERPROFILE\plugins\project-context-reader"
-npm run install:plugin
-```
-
-Requirements: Node.js 18+, Git, and [`ripgrep`](https://github.com/BurntSushi/ripgrep). Git context is optional.
 
 ## What it reads
 
