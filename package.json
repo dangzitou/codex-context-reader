@@ -1,0 +1,20 @@
+{
+  "name": "codex-context-reader",
+  "version": "0.1.0",
+  "description": "A read-only MCP plugin that lets ChatGPT Chat inspect local projects on demand.",
+  "type": "module",
+  "scripts": {
+    "install:plugin": "node scripts/install-plugin.mjs",
+    "test": "node test-server.mjs"
+  },
+  "keywords": [
+    "chatgpt",
+    "mcp",
+    "model-context-protocol",
+    "codex",
+    "local-repository",
+    "token-optimization"
+  ],
+  "author": "Deng Zitao",
+  "license": "MIT"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "project-context-reader",
+  "version": "0.1.0+codex.20260927075603",
+  "description": "A read-only MCP plugin for ChatGPT Chat to inspect selected local projects on demand.",
+  "author": {
+    "name": "Deng Zitao"
+  },
+  "interface": {
+    "displayName": "Project Context Reader",
+    "shortDescription": "Select and read a local project for planning.",
+    "longDescription": "A read-only MCP server with session-only project selection, repository overview, code search, file excerpts, and Git context.",
+    "developerName": "Deng Zitao",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Use Project Context Reader to select my project, inspect it, and propose an implementation plan. Do not modify files."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

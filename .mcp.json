@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "project-context-reader": {
+      "command": "node",
+      "args": ["./server.mjs"],
+      "cwd": ".",
+      "enabled": true,
+      "default_tools_approval_mode": "approve",
+      "tools": {
+        "select_project": {
+          "approval_mode": "prompt"
+        }
+      },
+      "startup_timeout_sec": 10,
+      "tool_timeout_sec": 30
+    }
+  }
+}
