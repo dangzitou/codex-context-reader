@@ -4,18 +4,18 @@ A read-only [Model Context Protocol](https://modelcontextprotocol.io/) plugin fo
 
 This is intended to reduce unnecessary prompt context and token use. Actual token consumption depends on the model and the questions asked.
 
-[中文](#中文) · [Where it runs](#where-it-runs) · [Installation](#installation) · [Security](#security) · [Contributing](CONTRIBUTING.md)
+[中文](#中文) · [ChatGPT Chat](#use-in-regular-chatgpt-chat) · [Installation](#installation) · [Security](#security) · [Contributing](CONTRIBUTING.md)
 
 ## Where it runs
 
 | Surface | Local project tools |
 | --- | --- |
-| ChatGPT desktop app, **local project** chat or ChatGPT Work | Supported; start a new chat after installation |
-| ChatGPT desktop app, **Codex → Local** task or Codex CLI | Supported |
-| Existing Quick Chat without a local project | The plugin may appear without its local tool catalog; create a local project chat |
-| ChatGPT on the web or mobile | Not supported by this local stdio server |
+| ChatGPT desktop app, **local project** chat or ChatGPT Work | Supported directly |
+| ChatGPT desktop app, **Codex → Local** task or Codex CLI | Supported directly |
+| Regular ChatGPT Chat, desktop or web | Supported through Secure MCP Tunnel |
+| Mobile ChatGPT | Connect through a running Secure MCP Tunnel |
 
-Choose **Work in a project**, attach the local folder, and start a new chat from that project. Then type `/mcp` to confirm that `project-context-reader` is connected before sending your request. The plugin process runs on your computer, so a hosted web or mobile chat cannot start it.
+Choose **Work in a project**, attach the local folder, and start a new chat from that project for direct local use. For regular ChatGPT Chat, follow [Use in regular ChatGPT Chat](#use-in-regular-chatgpt-chat).
 
 ## What it does
 
@@ -47,6 +47,59 @@ flowchart LR
 - Node.js 18 or later.
 - [`ripgrep`](https://github.com/BurntSushi/ripgrep) (`rg`) for code search.
 - Git is optional, but enables branch, status, diff, and commit context.
+
+## Use in regular ChatGPT Chat
+
+A normal ChatGPT Chat runs remotely, so it cannot start this local stdio server by itself. [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels) connects the already-tested server on your computer to a developer-mode ChatGPT app through outbound HTTPS; your project directory remains private and no inbound firewall port is opened.
+
+### One-time setup
+
+1. In [Platform tunnel settings](https://platform.openai.com/settings/organization/security/tunnels), create a tunnel associated with the ChatGPT workspace you will use. Keep its `tunnel_id`.
+2. Create a runtime API key permitted to use that tunnel. Do not put it in this repository or in a ChatGPT prompt.
+3. Download `tunnel-client` from the Platform tunnel settings page, then initialize it beside this plugin.
+
+macOS/Linux:
+
+```sh
+export CONTROL_PLANE_API_KEY="your-runtime-key"
+tunnel-client init \
+  --sample sample_mcp_stdio_local \
+  --profile project-context-reader \
+  --tunnel-id "your-tunnel-id" \
+  --mcp-command "node $HOME/plugins/project-context-reader/server.mjs"
+tunnel-client doctor --profile project-context-reader --explain
+tunnel-client run --profile project-context-reader
+```
+
+Windows PowerShell:
+
+```powershell
+$env:CONTROL_PLANE_API_KEY = "your-runtime-key"
+tunnel-client.exe init `
+  --sample sample_mcp_stdio_local `
+  --profile project-context-reader `
+  --tunnel-id "your-tunnel-id" `
+  --mcp-command "node $env:USERPROFILE\plugins\project-context-reader\server.mjs"
+tunnel-client.exe doctor --profile project-context-reader --explain
+tunnel-client.exe run --profile project-context-reader
+```
+
+Keep `tunnel-client run` running while using Chat. A healthy client reports `ready`; if it stops, Chat cannot call the tools.
+
+### Add it to ChatGPT Chat
+
+1. In ChatGPT Settings → Security and login, turn on **Developer mode**.
+2. Open **Plugins**, select **+**, choose **Tunnel**, then select or paste the `tunnel_id`.
+3. Review the discovered tools and create the app connection.
+4. Start a new regular Chat, add the new connection from the tools menu, then send:
+
+```text
+Use Project Context Reader to read /Users/alex/work/payments-service. First inspect the project and key code, then propose an implementation plan. Do not modify files.
+```
+
+ChatGPT should ask before `select_project`. This tool only selects a directory in memory for the current MCP session. To switch projects, provide another absolute path in the same chat; no restart is needed.
+
+> Secure MCP Tunnel is for private developer-mode use. It is not a public plugin distribution mechanism. Publishing this MCP server for everyone would require a stable public HTTPS endpoint and authentication.
 
 ## Installation
 
@@ -180,6 +233,59 @@ Codex Context Reader 是一个面向 **ChatGPT 桌面端本地项目**和 Codex 
 - 获取未提交改动摘要和近期 Git 提交。
 
 插件不修改任何项目文件，不执行项目代码，不读取 `.git` 内容，并会屏蔽 `.env`、证书和常见密钥文件。
+
+## 在普通 ChatGPT Chat 中使用
+
+普通 ChatGPT Chat 运行在远端，不能自行启动本机的 stdio 服务。通过 [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)，可以将这台电脑上已验证的服务经由**出站 HTTPS**接入开发者模式的 ChatGPT 应用；项目目录仍在内网，不需要开放入站端口。
+
+### 一次性配置
+
+1. 在 [Platform tunnel settings](https://platform.openai.com/settings/organization/security/tunnels) 创建 Tunnel，并关联将要使用的 ChatGPT workspace，记录 `tunnel_id`。
+2. 创建具有该 Tunnel 使用权限的 runtime API key。不要把它写入仓库或发到 ChatGPT 对话。
+3. 从 Platform tunnel settings 下载 `tunnel-client`，然后在本插件旁初始化：
+
+macOS/Linux：
+
+```sh
+export CONTROL_PLANE_API_KEY="你的 runtime key"
+tunnel-client init \
+  --sample sample_mcp_stdio_local \
+  --profile project-context-reader \
+  --tunnel-id "你的 tunnel_id" \
+  --mcp-command "node $HOME/plugins/project-context-reader/server.mjs"
+tunnel-client doctor --profile project-context-reader --explain
+tunnel-client run --profile project-context-reader
+```
+
+Windows PowerShell：
+
+```powershell
+$env:CONTROL_PLANE_API_KEY = "你的 runtime key"
+tunnel-client.exe init `
+  --sample sample_mcp_stdio_local `
+  --profile project-context-reader `
+  --tunnel-id "你的 tunnel_id" `
+  --mcp-command "node $env:USERPROFILE\plugins\project-context-reader\server.mjs"
+tunnel-client.exe doctor --profile project-context-reader --explain
+tunnel-client.exe run --profile project-context-reader
+```
+
+使用 Chat 期间保持 `tunnel-client run` 运行。状态为 `ready` 时，Chat 才能调用工具。
+
+### 在 Chat 中添加连接
+
+1. 打开 ChatGPT 设置 → **Security and login**，开启 **Developer mode**。
+2. 打开 **Plugins**，点击 **+**，连接方式选 **Tunnel**，选择或粘贴 `tunnel_id`。
+3. 核对发现的工具并创建应用连接。
+4. 新建普通 Chat，在工具菜单中添加该连接，然后发送：
+
+```text
+使用 Project Context Reader 读取 /Users/你的用户名/work/项目名。先了解项目结构和关键代码，再给我实施方案；不要修改文件。
+```
+
+ChatGPT 应在调用 `select_project` 前请求确认。该操作只在当前 MCP 会话的内存中选择目录；同一 Chat 中提供另一个绝对路径即可切换，无需重启。
+
+> Secure MCP Tunnel 用于私有的开发者模式连接，不是公开分发方案。若要让所有用户直接安装使用，需要稳定的公网 HTTPS MCP 服务和认证机制。
 
 ## 安装
 
