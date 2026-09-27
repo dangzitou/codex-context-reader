@@ -1,6 +1,6 @@
 {
   "name": "project-context-reader",
-  "version": "0.3.1+codex.20260927104500",
+  "version": "0.3.2+codex.20260927110000",
   "description": "A read-only MCP plugin for local ChatGPT projects and Codex to inspect selected local projects on demand.",
   "author": {
     "name": "Deng Zitao"
