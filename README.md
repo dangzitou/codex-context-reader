@@ -41,6 +41,16 @@ flowchart LR
 
 The plugin must be cloned under your home directory because ChatGPT's personal marketplace resolves plugins from `~/plugins/` (or `%USERPROFILE%\\plugins\\` on Windows).
 
+### Install with Codex
+
+You can paste this prompt directly into a local Codex chat. It chooses the correct macOS or Windows path itself:
+
+```text
+Install https://github.com/dangzitou/codex-context-reader as a personal ChatGPT desktop plugin on this computer. Clone it into the required home-directory plugins path for this operating system, but inspect an existing target first and do not overwrite unrelated files. Run its documented npm installer, verify that `codex plugin list` shows `project-context-reader@personal` as installed and enabled, and tell me how to invoke it in a new regular Chat. Only change the cloned plugin directory and the personal marketplace file required by its installer.
+```
+
+The prompt installs the plugin once. Selecting or switching a project later happens in Chat with `select_project`; it does not require another install or restart.
+
 ### macOS
 
 Install the prerequisites if needed:
@@ -152,6 +162,16 @@ Codex Context Reader 是一个面向 **ChatGPT 桌面端普通 Chat 模式**的�
 ## 安装
 
 请按上方的 [macOS](#macos) 或 [Windows](#windows-powershell) 步骤安装。首次安装后重启一次 ChatGPT 桌面端即可；之后切换项目只需在 Chat 中提供新的绝对路径。
+
+### 让 Codex 自动安装
+
+把下面整段直接发给本机的 Codex 即可。它会根据当前系统选择 macOS 或 Windows 的正确路径：
+
+```text
+请把 https://github.com/dangzitou/codex-context-reader 安装为这台电脑上 ChatGPT 桌面端的个人插件。请按当前操作系统把仓库 clone 到用户主目录下该插件要求的 plugins 路径；如果目标目录已经存在，先检查内容，不要覆盖无关文件。运行仓库 README 中的 npm 安装脚本，随后用 `codex plugin list` 验证 `project-context-reader@personal` 已安装且已启用，并告诉我如何在新建普通 Chat 中调用它。除克隆出的插件目录和安装脚本必需的个人 marketplace 配置文件外，不要修改其他文件。
+```
+
+这段提示词只需用于首次安装。之后在 Chat 中用 `select_project` 选择或切换项目，不需要再次安装或重启。
 
 在新建普通 Chat 中输入：
 
