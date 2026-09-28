@@ -41,7 +41,7 @@
 
 ### 安装并测试服务
 
-依赖：Node.js 18+、Git 和 [`ripgrep`](https://github.com/BurntSushi/ripgrep)；Git 上下文为可选能力。还需按 [OpenAI Tunnel 官方文档](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)安装 `tunnel-client`，校验官方 SHA-256，并将其加入 `PATH`（或在两条启动命令中都用 `--client` 指定可执行文件的绝对路径）。
+依赖：Node.js 18+ 和 Git；Git 上下文为可选能力。[`ripgrep`](https://github.com/BurntSushi/ripgrep) 同样是可选依赖：未安装时 `search_code` 会使用内置的有界降级搜索。还需按 [OpenAI Tunnel 官方文档](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)安装 `tunnel-client`，校验官方 SHA-256，并将其加入 `PATH`（或在两条启动命令中都用 `--client` 指定可执行文件的绝对路径）。
 
 macOS/Linux：
 
@@ -104,7 +104,7 @@ npm run chat:tunnel -- --prompt-key
 使用 Project Context Reader 读取 /Users/你的用户名/codex-context-reader。依次调用 select_project、project_overview、search_code 和 read_file，结合文件路径总结所见；不要修改文件。
 ```
 
-把示例中的用户名换成自己的；Windows 使用完整的 `C:\Users\...` 路径。先确认这份仓库副本不含私有数据。在 Chat 的工具调用详情中确认 `select_project`、`project_overview`、`search_code` 和 `read_file` 都成功返回结果。绿色“已连接”只证明连接建立，不证明已经读取项目。项目 ID 30 分钟后失效，届时重新选择项目；使用期间保持 `tunnel-client` 运行。
+把示例中的用户名换成自己的；Windows 使用完整的 `C:\Users\...` 路径。先确认这份仓库副本不含私有数据。在 Chat 的工具调用详情中确认 `select_project`、`project_overview`、`search_code` 和 `read_file` 都成功返回结果。绿色“已连接”只证明连接建立，不证明已经读取项目。项目 ID 在 30 分钟无读取后失效，届时重新选择项目；使用期间保持 `tunnel-client` 运行。
 
 OpenAI 的 Secure MCP Tunnel 是私有 MCP 的出站连接，不需要开放入站公网端口。[Tunnel 官方文档](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
 
@@ -113,15 +113,15 @@ OpenAI 的 Secure MCP Tunnel 是私有 MCP 的出站连接，不需要开放入�
 | 工具 | 用途 |
 | --- | --- |
 | `select_project` | 在用户确认后选择绝对路径，返回随机项目 ID。 |
-| `project_overview` | 读取根目录结构、分支、工作区状态和近期提交。 |
-| `search_code` | 在选定项目中搜索文本。 |
-| `read_file` | 最多读取选定项目文件的 400 行。 |
+| `project_overview` | 读取根目录或任意项目内子目录的结构、分支、工作区状态和近期提交。 |
+| `search_code` | 在选定项目中搜索文本，可用 glob 限定文件范围。 |
+| `read_file` | 单次最多读取 1-8 个项目文件各 400 行，并附续读提示。 |
 | `git_context` | 读取 Git 状态、差异摘要和近期提交。 |
 
 ## 安全与数据边界
 
 - 解析符号链接后，读取仍被限制在已选择目录内。
-- 项目 ID 随机生成，仅保存在内存中；30 分钟后或服务停止时失效。
+- 项目 ID 随机生成，仅保存在内存中；30 分钟无读取后或服务停止时失效。
 - `read_file` 会拦截 `.git`、依赖目录、输出目录、`.env*`、证书和常见密钥文件；`search_code` 目前没有排除所有证书/密钥扩展名，修复前只使用无敏感信息的仓库。
 - 服务不修改项目文件，也不执行项目代码。
 - 工具结果会成为 ChatGPT 上下文，只能用于组织允许对外提供的仓库。
@@ -133,7 +133,7 @@ OpenAI 的 Secure MCP Tunnel 是私有 MCP 的出站连接，不需要开放入�
 npm test
 ```
 
-测试覆盖 MCP 初始化、项目选择、项目 ID 限定读取、路径穿越拒绝和 Tunnel 启动参数生成。
+测试覆盖 MCP 初始化、项目选择与续期/过期、限定读取与路径穿越拒绝、子目录浏览、批量读取、glob 过滤与降级搜索，以及 Tunnel 启动参数生成。
 
 ## 许可证
 

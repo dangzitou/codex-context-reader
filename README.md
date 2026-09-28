@@ -41,7 +41,7 @@ If **Create MCP app** is unavailable, check the [documented Developer mode setti
 
 ### Install and test the server
 
-Requirements: Node.js 18+, Git, and [`ripgrep`](https://github.com/BurntSushi/ripgrep). Git context is optional. Install OpenAI's `tunnel-client` using the [official Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels), verify its checksum, and put it on your `PATH` (or use `--client` with its absolute path in both launcher commands).
+Requirements: Node.js 18+ and Git. Git context is optional. [`ripgrep`](https://github.com/BurntSushi/ripgrep) is optional too: without it, `search_code` uses a built-in bounded fallback search. Install OpenAI's `tunnel-client` using the [official Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels), verify its checksum, and put it on your `PATH` (or use `--client` with its absolute path in both launcher commands).
 
 macOS/Linux:
 
@@ -104,7 +104,7 @@ The key input is hidden and stays only in the launched process environment. `doc
 Use Project Context Reader to read /Users/yourname/codex-context-reader. Call select_project, project_overview, search_code, and read_file, then summarize what you found with file paths. Do not modify files.
 ```
 
-Replace `yourname` with your username (on Windows, use the full `C:\Users\...` path). Test only if this copy of the repository contains no private data. Check the Chat tool-call details for successful `select_project`, `project_overview`, `search_code`, and `read_file` results. A green Connected badge proves the connection, not that a project was read. The project ID expires after 30 minutes; select the project again when it does. Keep `tunnel-client` running while using Chat.
+Replace `yourname` with your username (on Windows, use the full `C:\Users\...` path). Test only if this copy of the repository contains no private data. Check the Chat tool-call details for successful `select_project`, `project_overview`, `search_code`, and `read_file` results. A green Connected badge proves the connection, not that a project was read. The project ID expires after 30 minutes without reads; select the project again when it does. Keep `tunnel-client` running while using Chat.
 
 OpenAI documents Secure MCP Tunnel as an outbound connection for private MCP servers; it does not require an inbound public port. [Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
 
@@ -113,15 +113,15 @@ OpenAI documents Secure MCP Tunnel as an outbound connection for private MCP ser
 | Tool | Purpose |
 | --- | --- |
 | `select_project` | Select an absolute local directory after user approval. Returns a random project ID. |
-| `project_overview` | Read root structure, branch, working-tree status, and recent commits. |
-| `search_code` | Search literal text in the selected project. |
-| `read_file` | Return up to 400 lines from a selected-project file. |
+| `project_overview` | Read the root or any project-relative directory, the branch, working-tree status, and recent commits. |
+| `search_code` | Search literal text in the selected project, optionally narrowed by a file glob. |
+| `read_file` | Return up to 400 lines each from 1-8 selected-project files in one call, with continuation hints. |
 | `git_context` | Read Git status, diff summary, and recent commits. |
 
 ## Security
 
 - Reads stay within the chosen directory after resolving symlinks.
-- Project IDs are random, memory-only, and expire after 30 minutes or when the server stops.
+- Project IDs are random, memory-only, and expire after 30 minutes of inactivity or when the server stops.
 - `read_file` blocks `.git`, dependencies, output directories, `.env*`, certificates, and common key files. `search_code` currently does not exclude every certificate/key extension: use only nonsensitive repositories until this is fixed.
 - The server does not modify project files or run project code.
 - Tool results become ChatGPT context. Use only with repositories your organization permits you to share.
@@ -133,7 +133,7 @@ OpenAI documents Secure MCP Tunnel as an outbound connection for private MCP ser
 npm test
 ```
 
-The tests exercise MCP initialization, project selection, token-scoped reads, traversal rejection, and Tunnel-launcher argument generation.
+The tests exercise MCP initialization, project selection, token-scoped reads, traversal rejection, subdirectory listings, batch reads, glob-filtered and fallback search, selection idle-renewal and expiry, and Tunnel-launcher argument generation.
 
 ## License
 
